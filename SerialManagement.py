@@ -1,12 +1,9 @@
 from Common import *
-import Common
 from PyQt5 import QtCore
 import queue as Queue
 
+
 # Thread to handle incoming & outgoing serial data
-from Logger import log
-
-
 class SerialThread(QtCore.QThread):
     frameArrived = QtCore.pyqtSignal(bytes)
 
@@ -17,7 +14,7 @@ class SerialThread(QtCore.QThread):
         self.running = True
         self.ser = None
         self.logger = log_widget
-        print("Init")
+        print("Init serial thread")
 
     def write(self, data):  # Write outgoing data to serial port if open
         self.txq.put(data)  # ..using a queue to sync with reader thread
@@ -27,12 +24,10 @@ class SerialThread(QtCore.QThread):
         try:
             self.ser.close()
         except Exception as e:
-            # print(e)
             pass
 
         try:
             self.logger.Log(f"Ouverture du port {self.portname} au débit de {self.baudrate} bps")
-
             self.ser = serial.Serial(self.portname, self.baudrate, timeout=0.5)
             self.ser.flushInput()
 

@@ -35,16 +35,15 @@ def GetSerial(combo_box: QtWidgets.QComboBox) -> bool:
         LogWidget.Log(f"{len(ports)} port{'s'[:(1 > 1)]} COM découvert")
 
         for port in ports:
-            combo_box.addItem(f"{port.name} - {port.description}")
+            try :
+                ser = serial.Serial(port.name)
+                print(f"port {port.name} is open : {ser.is_open}")
+                combo_box.addItem(f"{port.name} - {port.description}")
+            except Exception as e:
+                print('test', e)
+                pass
         return True
         # Try to connect in order
-
-
-
-
-
-
-
 
 def CleanHexInput(text_input: str):
     # Clean data of prefix, LF and space

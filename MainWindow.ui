@@ -52,10 +52,39 @@
        <widget class="QComboBox" name="portCBox"/>
       </item>
       <item>
-       <widget class="QPushButton" name="refreshButton">
+       <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Rafraichir</string>
+         <string>Baudrate</string>
         </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="baudrateCBox">
+        <item>
+         <property name="text">
+          <string>115200</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>9600</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>19200</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>38400</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>57600</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item>
@@ -70,6 +99,20 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="opencloseButton">
+        <property name="text">
+         <string>Fermer le port</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="refreshButton">
+        <property name="text">
+         <string>Rafraichir</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -136,6 +179,15 @@
      <height>20</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFichier">
+    <property name="title">
+     <string>Fichier</string>
+    </property>
+    <addaction name="saveAction"/>
+    <addaction name="openAction"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menuFichier"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -148,6 +200,16 @@
     <bool>false</bool>
    </attribute>
   </widget>
+  <action name="saveAction">
+   <property name="text">
+    <string>Sauvegarder les commands</string>
+   </property>
+  </action>
+  <action name="openAction">
+   <property name="text">
+    <string>Ouvrir un fichier</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

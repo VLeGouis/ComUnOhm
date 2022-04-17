@@ -16,7 +16,7 @@ from Logger import log
 
 
 class Command(QtWidgets.QWidget, Ui_Command):
-
+    deleteSignal = QtCore.pyqtSignal(QtWidgets.QWidget)
     def __init__(self, line: str):
         QtWidgets.QWidget.__init__(self)
         self.setupUi(self)
@@ -37,6 +37,8 @@ class Command(QtWidgets.QWidget, Ui_Command):
 
         self.UpdateCommand()
 
+    def getCmd(self) -> str:
+        return self.commandLEdit.text()
 
     def UpdateCommand(self):
         line = self.GetAppendice(self.commandLEdit.text())
@@ -62,6 +64,7 @@ class Command(QtWidgets.QWidget, Ui_Command):
 
     def Delete(self):
         self.deleteLater()
+        self.deleteSignal.emit(self)
 
 
     def GetAppendice(self, msg: str):
