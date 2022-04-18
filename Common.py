@@ -25,8 +25,8 @@ def init(log_widget: Logger):
 def GetSerial(combo_box: QtWidgets.QComboBox) -> bool:
     combo_box.clear()
     combo_box.addItem("Pas de port COM")
-
     ports = serial.tools.list_ports.comports()
+
     if len(ports) == 0:
         LogWidget.Log("Pas de port COM", "red")
         return False  # No COM port where opened
@@ -40,8 +40,9 @@ def GetSerial(combo_box: QtWidgets.QComboBox) -> bool:
                 print(f"port {port.name} is open : {ser.is_open}")
                 combo_box.addItem(f"{port.name} - {port.description}")
             except Exception as e:
-                print('test', e)
+                print(e)
                 pass
+
         return True
         # Try to connect in order
 
@@ -76,3 +77,4 @@ def CleanHexInput(text_input: str):
     test_data = list(map(lambda it: int(it, 16), test_data))
 
     return True, test_data
+

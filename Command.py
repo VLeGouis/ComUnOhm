@@ -48,6 +48,7 @@ class Command(QtWidgets.QWidget, Ui_Command):
         self.byteLabel.setText(line)
 
     def Send(self):
+
         try:
             if Common.serTh is not None and Common.serTh.running:
 
@@ -63,7 +64,6 @@ class Command(QtWidgets.QWidget, Ui_Command):
 
 
     def Delete(self):
-        self.deleteLater()
         self.deleteSignal.emit(self)
 
 

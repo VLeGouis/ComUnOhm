@@ -79,10 +79,7 @@ class Logger(QtWidgets.QWidget, Ui_Logger):
         else:
             try:
                 msg = rxdata.decode(self.encodingCBox.currentText())
-                print(msg.encode())
                 msg, appendix = self.GetAppendice(msg)
-                print(self.new_frame, appendix)
-                print(msg.encode())
 
                 if self.new_frame or appendix:
                     self.Log(msg, log.RX)

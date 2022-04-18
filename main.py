@@ -1,14 +1,12 @@
 import sys
-
-from PyQt5 import QtWidgets
 from PyQt5.Qt import *
-from PyQt5.QtCore import QTimer
 
 import Common
 from Command import Command
-from Logger import Logger, log
+from Logger import log
 from MainWindow import *
 from SerialManagement import SerialThread
+import breeze_ressource
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -27,27 +25,37 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Init widget signal and connexion
         self.ConnectWidget()
 
+        self.theme =  ":/dark.qss"
+
         self.list_cmd = list()
         self.AddCmd("Test1")
         self.AddCmd("Test2")
 
-
     def ConnectWidget(self):
         # Port Combo Box
-        self.portCBox.currentTextChanged.connect(lambda: self.ConnectSerial(self.portCBox.currentText()))
+        self.portCBox.currentTextChanged.connect(self.ConnectSerial)
         # Refresh port button
         self.refreshButton.clicked.connect(lambda: Common.GetSerial(self.portCBox))
+        # Close port button
+        self.opencloseButton.clicked.connect(self.TogglePort)
         # Add command button
         self.addCmdButton.clicked.connect(lambda: self.AddCmd())
         # Save button
         self.saveAction.triggered.connect(self.SaveFile)
         # Open File action
         self.openAction.triggered.connect(self.OpenFile)
+        # Dark mode Action
+        self.themeAction.triggered.connect(self.ToggleTheme)
 
-    def ConnectSerial(self, port_name):
+    def ConnectSerial(self):
+        port_name = self.portCBox.currentText()
         try:
             port_name = port_name.split(" -")[0]
             if not port_name.startswith("Pas de port COM"):
+
+                if Common.serTh is not None:
+                    Common.serTh.close()
+
                 baudrate = int(self.baudrateCBox.currentText())
                 Common.serTh = SerialThread(port_name, baudrate, self.logger)
                 Common.serTh.start()
@@ -55,6 +63,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         except Exception as e:
             self.logger.Log(e, log.ERROR)
+
+    def TogglePort(self):
+        if Common.serTh is not None :
+            Common.serTh.running = False
+            Common.serTh = None
+            self.opencloseButton.setText("Ouvrir le port")
+            self.opencloseButton.clicked.connect(self.ConnectSerial)
+
 
     def AddCmd(self, msg=""):
         pos = self.commandLayout.count() - 2
@@ -64,6 +80,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.commandLayout.insertWidget(pos, cmd)
 
     def DeleteCommand(self, wid2delete):
+        wid2delete.deleteLater()
         self.commandLayout.removeWidget(wid2delete)
 
     """
@@ -76,39 +93,30 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def closeEvent(self, event):
         print("Close event")
-        Common.serTh.running = False
+        Common.serTh.close()
         Common.serTh.wait()
 
     def SaveFile(self):
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(filter="(*.txt)")
         if filename:
             with open(filename, "w") as cmd_file:
-                for cmd in self.list_cmd :
+                for cmd in self.list_cmd:
                     line = cmd.getCmd()
-                    cmd_file.write(line+'\n')
+                    cmd_file.write(line + '\n')
 
             self.logger.Log(f"Log sauvegardé ici : {filename}", "green")
 
     def OpenFile(self):
-        index = self.commandLayout.count()
-        while (index >= 0):
-            try :
-                #Try to delete command from layout
-                self.commandLayout.itemAt(index).widget().Delete()
-                self.commandLayout.itemAt(index).widget().setParent(None)
-
-            except Exception as e :
-                print(e)
-            index -= 1
-
+        for cmd in self.list_cmd:
+            self.DeleteCommand(cmd)
+            
         self.list_cmd.clear()
 
-        filename, _ = QtWidgets.QFileDialog.getOpenFileNames(filter="(*.txt)")
-        filename = filename[0]
-        print(filename)
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="(*.txt)")
+
         if filename:
-            try :
-                #Get the lines of the file, on command per line
+            try:
+                # Get the lines of the file, on command per line
                 with open(filename, "r+") as cmd_file:
                     cmds = cmd_file.readlines()
                     print(cmds)
@@ -119,8 +127,28 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 self.logger.Log(f"Fichier chargé: {filename}", "green")
 
-            except Exception as e :
+            except Exception as e:
                 print(e)
+
+    """
+    Use self.theme attribut to toggle the graphic theme between light and dark
+    
+    @output Change self.theme path to the other theme
+    """
+    def ToggleTheme(self):
+
+        if self.theme == ":/light/stylesheet.qss":
+            self.theme = ":/dark/stylesheet.qss"
+            self.themeAction.setText("Passer au thème lumineux")
+        else :
+            self.theme = ":/light/stylesheet.qss"
+            self.themeAction.setText("Passer au thème sombre")
+
+        file = QFile(self.theme)
+        file.open(QFile.ReadOnly | QFile.Text)
+        stream = QTextStream(file)
+        QApplication.instance().setStyleSheet(stream.readAll())
+
 
 if __name__ == "__main__":
     import os  # Used in Testing Script
@@ -128,7 +156,13 @@ if __name__ == "__main__":
     os.system("pyuic5 MainWindow.ui -o MainWindow.py")
     os.system("pyuic5 command.ui -o CommandUi.py")
     os.system("pyuic5 Logger.ui -o LoggerUi.py")
+    os.system("pyrcc5 Ressource/dist/breeze.qrc -o breeze_ressource.py")
+
     app = QtWidgets.QApplication(sys.argv)
+    file = QFile(":/dark/stylesheet.qss")
+    file.open(QFile.ReadOnly | QFile.Text)
+    stream = QTextStream(file)
+    app.setStyleSheet(stream.readAll())
 
     window = MainWindow()
     window.show()

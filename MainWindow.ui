@@ -187,7 +187,14 @@
     <addaction name="openAction"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuAffichage">
+    <property name="title">
+     <string>Affichage</string>
+    </property>
+    <addaction name="themeAction"/>
+   </widget>
    <addaction name="menuFichier"/>
+   <addaction name="menuAffichage"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -208,6 +215,11 @@
   <action name="openAction">
    <property name="text">
     <string>Ouvrir un fichier</string>
+   </property>
+  </action>
+  <action name="themeAction">
+   <property name="text">
+    <string>Passer au thème lumineux</string>
    </property>
   </action>
  </widget>
