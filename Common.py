@@ -19,9 +19,6 @@ def init(log_widget: Logger):
     global serTh
     serTh = None
 
-    os.system("pyuic5 MainWindow.ui -o MainWindow.py")
-
-
 def GetSerial(combo_box: QtWidgets.QComboBox) -> bool:
     combo_box.clear()
     combo_box.addItem("Pas de port COM")

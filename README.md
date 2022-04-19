@@ -10,8 +10,10 @@ I'm needed to send the same commands too many times for hardware debugging. I pr
 - [x] Ascii, HEX and UTF-8 encoding in RX (future : in TX too)
 - [x] Open COM port automatically, select bitrate, COM port refresh
 - [X] Dark mode
-- [ ] Close COM port automatically and manually
+- [X] Close COM port automatically and manually
 - [ ] Restore previous configuration
+- [ ] Hex detection and special char detection in command
+- [ ] Translation 
 - [ ] No bug (just kidding) 
 
 ### Shout out 

@@ -1,5 +1,9 @@
+import os
 import sys
+
+from PyQt5 import QtWidgets
 from PyQt5.Qt import *
+from PyQt5 import *
 
 import Common
 from Command import Command
@@ -9,7 +13,8 @@ from SerialManagement import SerialThread
 import breeze_ressource
 
 
-class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+class MainWindow(QMainWindow, Ui_MainWindow):
+
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
@@ -25,11 +30,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Init widget signal and connexion
         self.ConnectWidget()
 
-        self.theme =  ":/dark.qss"
+        #Set dark theme by toggling
+        self.theme = ":/light/stylesheet.qss"
+        self.ToggleTheme()
 
         self.list_cmd = list()
-        self.AddCmd("Test1")
-        self.AddCmd("Test2")
+        self.AddCmd("Test1") #debug
+        self.AddCmd("Test2") #debug
+
+        Common.serTh = SerialThread(self.logger)
 
     def ConnectWidget(self):
         # Port Combo Box
@@ -37,7 +46,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Refresh port button
         self.refreshButton.clicked.connect(lambda: Common.GetSerial(self.portCBox))
         # Close port button
-        self.opencloseButton.clicked.connect(self.TogglePort)
+        self.opencloseButton.clicked.connect(self.ClosePort)
         # Add command button
         self.addCmdButton.clicked.connect(lambda: self.AddCmd())
         # Save button
@@ -52,24 +61,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         try:
             port_name = port_name.split(" -")[0]
             if not port_name.startswith("Pas de port COM"):
-
-                if Common.serTh is not None:
-                    Common.serTh.close()
-
                 baudrate = int(self.baudrateCBox.currentText())
-                Common.serTh = SerialThread(port_name, baudrate, self.logger)
-                Common.serTh.start()
+
+                Common.serTh.OpenPort(port_name, baudrate)
                 Common.serTh.frameArrived.connect(self.logger.RxLog)
+
+            else :
+                self.ClosePort()
 
         except Exception as e:
             self.logger.Log(e, log.ERROR)
 
-    def TogglePort(self):
+    def ClosePort(self):
         if Common.serTh is not None :
-            Common.serTh.running = False
-            Common.serTh = None
+            Common.serTh.ClosePort()
             self.opencloseButton.setText("Ouvrir le port")
             self.opencloseButton.clicked.connect(self.ConnectSerial)
+
 
 
     def AddCmd(self, msg=""):
@@ -93,7 +101,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def closeEvent(self, event):
         print("Close event")
-        Common.serTh.close()
+        Common.serTh.running = False #End serial thread
         Common.serTh.wait()
 
     def SaveFile(self):
@@ -112,7 +120,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             
         self.list_cmd.clear()
 
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="(*.txt)")
+        filename, _ = QFileDialog.getOpenFileName(filter="(*.txt)")
 
         if filename:
             try:
@@ -136,7 +144,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     @output Change self.theme path to the other theme
     """
     def ToggleTheme(self):
-
         if self.theme == ":/light/stylesheet.qss":
             self.theme = ":/dark/stylesheet.qss"
             self.themeAction.setText("Passer au thème lumineux")
@@ -151,19 +158,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 if __name__ == "__main__":
-    import os  # Used in Testing Script
 
-    os.system("pyuic5 MainWindow.ui -o MainWindow.py")
-    os.system("pyuic5 command.ui -o CommandUi.py")
-    os.system("pyuic5 Logger.ui -o LoggerUi.py")
-    os.system("pyrcc5 Ressource/dist/breeze.qrc -o breeze_ressource.py")
-
-    app = QtWidgets.QApplication(sys.argv)
-    file = QFile(":/dark/stylesheet.qss")
-    file.open(QFile.ReadOnly | QFile.Text)
-    stream = QTextStream(file)
-    app.setStyleSheet(stream.readAll())
-
+    #Execute the app
+    app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     app.exec_()
