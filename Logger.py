@@ -12,6 +12,7 @@ class log(Enum):
 
 
 class Logger(QtWidgets.QWidget, Ui_Logger):
+    sendSignal = QtCore.pyqtSignal(bytes)
 
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -143,4 +144,13 @@ class Logger(QtWidgets.QWidget, Ui_Logger):
                 return msg + "\r\n", True
             print(self.crlfCBox.currentText())
             return msg, False
+
+    def keyPressEvent(self, event):
+
+        if event.text().isalnum():
+            self.sendSignal.emit(event.text().encode())
+            
+        elif event.key() == QtCore.Qt.Key_Return :
+            self.sendSignal.emit("\r\n".encode())
+
 

@@ -21,8 +21,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show()  # Show the GUI
         self.setWindowTitle("ComUnOhm")
 
-        # This part is to share the same log output from different files
         Common.init(self.logger)
+
         # Should be in dedicated file to get Serial Port
         Common.GetSerial(self.portCBox)
 
@@ -59,6 +59,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.openAction.triggered.connect(self.OpenFile)
         # Dark mode Action
         self.themeAction.triggered.connect(self.ToggleTheme)
+        #Free typing logger
+        self.logger.sendSignal.connect(self.Send)
 
     ##########################
     # Serial Port Management
