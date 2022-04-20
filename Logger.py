@@ -143,3 +143,4 @@ class Logger(QtWidgets.QWidget, Ui_Logger):
                 return msg + "\r\n", True
             print(self.crlfCBox.currentText())
             return msg, False
+

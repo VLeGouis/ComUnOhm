@@ -17,6 +17,8 @@ from Logger import log
 
 class Command(QtWidgets.QWidget, Ui_Command):
     deleteSignal = QtCore.pyqtSignal(QtWidgets.QWidget)
+    sendSignal = QtCore.pyqtSignal(bytes)
+
     def __init__(self, line: str):
         QtWidgets.QWidget.__init__(self)
         self.setupUi(self)
@@ -48,20 +50,9 @@ class Command(QtWidgets.QWidget, Ui_Command):
         self.byteLabel.setText(line)
 
     def Send(self):
-
-        try:
-            if Common.serTh is not None and Common.serTh.running:
-
-                line = self.commandLEdit.text()
-                line = self.GetAppendice(line)
-                Common.serTh.write(line.encode())
-
-            else :
-                Common.LogWidget.Log("Pas de port série ouvert", log.ERROR)
-
-        except Exception as e :
-            print(e)
-
+        line = self.commandLEdit.text()
+        line = self.GetAppendice(line)
+        self.sendSignal.emit(line.encode())
 
     def Delete(self):
         self.deleteSignal.emit(self)
