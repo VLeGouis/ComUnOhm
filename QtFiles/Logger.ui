@@ -103,7 +103,11 @@
     </layout>
    </item>
    <item>
-    <widget class="QTextBrowser" name="logBrowser"/>
+    <widget class="QTextBrowser" name="logBrowser">
+     <property name="undoRedoEnabled">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

@@ -25,7 +25,7 @@ def GetSerial(combo_box: QtWidgets.QComboBox) -> bool:
     ports = serial.tools.list_ports.comports()
 
     if len(ports) == 0:
-        LogWidget.Log("Pas de port COM", "red")
+        LogWidget.Log("Pas de port COM", error=True)
         return False  # No COM port where opened
 
     else:

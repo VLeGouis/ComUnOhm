@@ -12,7 +12,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from CommandUi import *
 import Common
 from Common import *
-from Logger import log
 
 
 class Command(QtWidgets.QWidget, Ui_Command):

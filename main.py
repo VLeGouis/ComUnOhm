@@ -7,7 +7,6 @@ from PyQt5 import *
 
 import Common
 from Command import Command
-from Logger import log
 from MainWindow import *
 import breeze_ressource
 
@@ -69,14 +68,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         port_name = self.portCBox.currentText()
         port_name = port_name.split(" -")[0]
 
-        # TODO Ensure port is not already open with the new worker system
-
         if not port_name.startswith("Pas de port COM"):
-            baudrate = int(self.baudrateCBox.currentText())
+            bitrate = int(self.baudrateCBox.currentText())
 
             self.ser.setPortName(port_name)
-            self.ser.setBaudRate(baudrate, QSerialPort.AllDirections)
+            self.ser.setBaudRate(bitrate, QSerialPort.AllDirections)
             self.ser.open(QSerialPort.ReadWrite)
+            self.logger.Log("Ouverture du port ")
             self.opencloseButton.setText("Fermer le port")
             self.opencloseButton.clicked.connect(self.ClosePort)
         else:
@@ -92,14 +90,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @QtCore.pyqtSlot()
     def receive(self) -> None:
         text = bytearray(self.ser.readAll())
-        self.logger.RxLog(bytearray(text))
+        self.logger.rxLog(bytearray(text))
 
     @QtCore.pyqtSlot(bytes)
     def Send(self, data) -> None:
         if self.ser.isOpen():
             self.ser.write(data)
+            self.logger.txLog(data)
         else:
-            self.logger.Log("Pas de port COM ouvert", log.ERROR)
+            self.logger.Log("Pas de port COM ouvert", error=True)
 
 
 

@@ -1,14 +1,9 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
+
 from LoggerUi import *
 import Common
 from Common import *
-
-
-class log(Enum):
-    TX = 1
-    RX = 2
-    ERROR = 3
-    APPEND = 4
 
 
 class Logger(QtWidgets.QWidget, Ui_Logger):
@@ -18,11 +13,17 @@ class Logger(QtWidgets.QWidget, Ui_Logger):
         QtWidgets.QWidget.__init__(self, parent)
         self.setupUi(self)
 
-        self.new_frame = True
+        # Needed to follow if the next line need a timing header
+        self.next_fr_need_header = True
 
         self.logBrowser.setReadOnly(True)
         self.saveButton.clicked.connect(self.SaveLog)
-        self.eraseButton.clicked.connect(self.EraseLog)
+        self.eraseButton.clicked.connect(self.clearLog)
+
+        self.appendix = ""
+        self.last_msg_was = "None"
+        self.crlfCBox.currentTextChanged.connect(self.updateAppendix)
+
 
     def SaveLog(self):
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(filter="(*.txt)")
@@ -31,126 +32,122 @@ class Logger(QtWidgets.QWidget, Ui_Logger):
                 log_file.write(self.logBrowser.toPlainText())
             self.Log(f"Log sauvegardé ici : {filename}", "green")
 
-    def EraseLog(self):
+    def clearLog(self):
         self.logBrowser.clear()
-        self.new_frame = True
+        self.next_fr_need_header = True
 
-    def Log(self, msg: str, args=0):
+    """
+    Logging function for RX and TX with colored input
+    @input msg      String to display
+    @input append   this determine if we need to display the timing header
+    """
 
-        line = '\r\n[' + datetime.now().strftime("%d/%m/%Y, %H:%M:%S") + '] '
+    def Log(self, msg, color="#f000", append=False, error=False, msg_type="None"):
+        if error:
+            color = "#FF0000"  # Red
+            self.next_fr_need_header = True
+        msg = msg.replace("\r", "<CR>").replace("\n", "<LF>")
 
-        if args == log.TX:
-            line = f"<span style=\"font-weight: bold;color:#9c0000;\"> {line} TX -> </span> " \
-                   f"<span style=\"color:#9c0000;\">{msg}</span> "
-            self.new_frame = True
+        line = f"<span style=\"color:{color};\">{msg}</span>"
 
-        elif args == log.RX:
-            line = f"<span style=\"font-weight: bold;color:#005300;\"> {line} RX -> </span> " \
-                   f"<span style=\"color:#005300;\">{msg}</span> "
-            self.new_frame = False
+        if self.next_fr_need_header or msg_type != self.last_msg_was:
+            header = '\r\n[' + datetime.now().strftime("%d/%m/%Y, %H:%M:%S") + ']'
+            line = f"<span style=\"font-weight: bold;color:{color};\">{header}</span> {line}"
+            self.logBrowser.append(line)
 
-        elif args == log.APPEND:
-            line = f"<span style=\"color:#005300;\">{msg}</span>"
-            if msg==" ":
-                self.logBrowser.insertPlainText(msg)
+        else:
+            if msg == " " : #Allow space to be displayed
+                self.logBrowser.insertPlainText(" ")
             else :
                 self.logBrowser.insertHtml(line)
-                self.logBrowser.update()
-            return
+            print(self.logBrowser.toPlainText())
 
-        elif args == log.ERROR:
-            print("error")
-            color = matplotlib.colors.cnames["red"]
-            line = f"<span style=\"font-weight: bold;color:{color};\" > {line} -> {msg}</span> "
-            self.new_frame = True
-
-        else:
-            line = f"<span style=\"font-weight: bold; \"> {line} </span> {msg}"
-
-        self.logBrowser.append(line)
+        self.last_msg_was = msg_type
         self.logBrowser.update()
 
-    def RxLog(self, rxdata):
+    def rxLog(self, data: bytes, header="RX", msg_type="rx", color="#009933"):
+
         if self.encodingCBox.currentText() == 'HEX':
-            msg = ""
-            for char in rxdata:
-                msg += f"0x{char:02x} "
-            self.Log(msg, log.RX)
+            hexstring = "0x" + " 0x".join("{:02x}".format(c) for c in data)
+            self.Log(f"{header} -> {hexstring}", msg_type=msg_type)
 
         else:
             try:
-                msg = rxdata.decode(self.encodingCBox.currentText())
-                msg, appendix = self.GetAppendice(msg)
-
-                if self.new_frame or appendix:
-                    self.Log(msg, log.RX)
-
-                else:
-                    self.Log(msg, log.APPEND)
-
-            except Exception as e:
-                print(e)
-                self.Log("Un charactère non Ascii a été trouvé", log.ERROR)
-                msg = ""
-                for char in rxdata:
-                    msg += f"0x{char:02x} "
-                self.Log(msg, log.RX)
-
-    def TxLog(self, txdata):
-        if self.encodingCBox.currentText() == 'HEX':
-            msg = ""
-            for char in txdata:
-                msg += f"0x{char:02x} "
-            self.Log(msg, log.TX)
-
-        else:
-            try:
-                self.Log(txdata.decode(self.encodingCBox.currentText()), log.TX)
+                msg = data.decode(self.encodingCBox.currentText())
             except:
-                self.Log("Un charactère non Ascii a été trouvé", log.ERROR)
-                msg = ""
-                for char in txdata:
-                    msg += f"0x{char:02x} "
-                self.Log(msg, log.TX)
+                self.Log("Wrong char in msg for encoding", msg_type=msg_type)
+                hexstring = "0x" + " 0x".join("{:02x}".format(c) for c in data)
+                self.next_fr_need_header = True
+                self.Log(f"{header} -> {hexstring}", msg_type=msg_type)
+                return
 
-    def GetAppendice(self, msg: str):
-        if self.crlfCBox.currentText() == "Pas de CR+LF" :
-            return msg, False
+            msg, appendix = self.getAppendix(msg)
 
-        if msg.endswith("\r"):
-            if self.crlfCBox.currentText() == "AUTO LF":
-                return msg[:-1] + "\n", True
-            if self.crlfCBox.currentText() == "AUTO CR+LF":
-                return msg + "\n", True
-            return msg, True
+            if self.next_fr_need_header:
+                msg = f"{header} -> " + msg
 
-        if msg.endswith("\n"):
+            self.Log(msg, append=not self.next_fr_need_header, msg_type=msg_type, color=color)
+            self.next_fr_need_header = appendix
 
-            if self.crlfCBox.currentText() == "AUTO CR":
-                return msg[:-1] + "\r", True
-            if self.crlfCBox.currentText() == "AUTO CR+LF":
-                if not msg.endswith("\r\n"):
-                    return msg[:-1] + "\r\n", True
-            return msg, True
+    def txLog(self, txdata: bytes):
+        self.rxLog(txdata, header="TX", msg_type="tx", color="#0066ff")
 
-        else:
+    def updateAppendix(self) -> None:
+        if self.crlfCBox.currentText() == "Pas de CR+LF":
+            self.appendix = ""
+        elif self.crlfCBox.currentText() == "AUTO CR+LF":
+            self.appendix = "\r\n"
+        elif self.crlfCBox.currentText() == "AUTO CR":
+            self.appendix = "\r"
+        elif self.crlfCBox.currentText() == "AUTO LF":
+            self.appendix = "\n"
 
-            if self.crlfCBox.currentText() == "AUTO LF":
-                return msg + "\n", True
-            if self.crlfCBox.currentText() == "AUTO CR":
-                return msg + "\r", True
-            if self.crlfCBox.currentText() == "AUTO CR+LF":
-                print("No CRLF")
-                return msg + "\r\n", True
-            print(self.crlfCBox.currentText())
-            return msg, False
+    def getAppendix(self, msg: str):
+        if self.appendix == "":
+            return msg, (msg.endswith("\r\n") or msg.endswith("\n") or msg.endswith("\r"))
+
+        cur_app = ""
+
+        # First find the hypothetical CRLF
+        if len(msg) >= 1:
+            if msg[-1] == "\n":
+                cur_app += "\n"
+
+                if len(msg) >= 2 and msg[-2] == "\r":
+                    cur_app = "\r\n"
+
+            elif msg[-1] == "\r":
+                cur_app = "\r"
+
+        if cur_app is not self.appendix:
+            msg = msg[:len(msg) - len(cur_app)] + self.appendix
+
+        return msg, True
 
     def keyPressEvent(self, event):
+        encoding = self.encodingCBox.currentText()
 
-        if event.text().isalnum():
-            self.sendSignal.emit(event.text().encode())
-            
-        elif event.key() == QtCore.Qt.Key_Return :
-            self.sendSignal.emit("\r\n".encode())
+        if event.key() == Qt.Key_Backspace:
+            self.sendSignal.emit("\b".encode(encoding))
 
+        # TODO Make teh space key being catched
+        if event.key() == Qt.Key_Space:
+            print("space")
+            self.sendSignal.emit(" ".encode(encoding))
 
+        # TODO Make backspace catched in log with erasing last char
+
+        if encoding == "ASCII":
+            if event.text().isascii():
+                self.sendSignal.emit(event.text().encode(encoding))
+            else:
+                self.Log("Encodage de ce charactère impossible")
+
+        elif event.key() == Qt.Key_Return:
+            self.sendSignal.emit("\r\n".encode(encoding))
+
+        else:
+            try:
+                self.sendSignal.emit(event.text().encode(encoding))
+            except:
+                self.Log("Encodage de cette touche impossible")

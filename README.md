@@ -11,6 +11,7 @@ I'm needed to send the same commands too many times for hardware debugging. I pr
 - [x] Open COM port automatically, select bitrate, COM port refresh
 - [X] Dark mode
 - [X] Close COM port automatically and manually
+- [X] Free typing and transmitting if the log display is selected
 - [ ] Restore previous configuration
 - [ ] Hex detection and special char detection in command
 - [ ] Translation 
